@@ -6,11 +6,21 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using Microsoft.Win32;
 using System.Threading;
+using System.Runtime.InteropServices;
 
-namespace ConsoleApplication4
+namespace FixedResolutionApp
 {
     class Program
     {
+
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport("Kernel32")]
+        private static extern IntPtr GetConsoleWindow();
+
+        const int SW_HIDE = 0;
+        const int SW_SHOW = 5;
         private static string resolution;
         private static int width;
         private static int hight;
@@ -21,6 +31,8 @@ namespace ConsoleApplication4
 
         static void Main(string[] args)
         {
+            
+            
            string mutex_id = "MY_APP";
            using (Mutex mutex = new Mutex(false, mutex_id))
            {
@@ -28,6 +40,12 @@ namespace ConsoleApplication4
                {
                    MessageBox.Show("Instance Already Running!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Hand);
                    return;
+               }
+               else
+               {
+                   IntPtr hwnd;
+                   hwnd = GetConsoleWindow();
+                   ShowWindow(hwnd, SW_HIDE);
                }
 
                try
@@ -73,17 +91,18 @@ namespace ConsoleApplication4
                    Resolution.CResolution ChangeRes = new Resolution.CResolution(width, hight, frequency);
                    // Set the SystemEvents class to receive event notification when a user  
                    // preference changes, the palette changes, or when display settings change.
-                   SystemEvents.UserPreferenceChanging += new UserPreferenceChangingEventHandler(SystemEvents_UserPreferenceChanging);
-               
+                   SystemEvents.DisplaySettingsChanged += new EventHandler(SystemEvents_DisplaySettingsChanged);
 
 
-                   while (true) ;
+
+                   
                }
            }
+           Console.Read();
             
         }
 
-        static void SystemEvents_UserPreferenceChanging(object sender, UserPreferenceChangingEventArgs e)
+        static void SystemEvents_DisplaySettingsChanged(object sender, EventArgs e)
         {
             if (!System.Windows.Forms.SystemInformation.TerminalServerSession)
             {
